@@ -33,7 +33,12 @@ def evidence_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Filter using utility
     filtered = filter_detections(detections, policy)
-    
+
+    representative_samples = _build_representative_samples(
+        filtered,
+        limit=3,
+    )
+
     # Build evidence record
     timestamp = datetime.now(timezone.utc).isoformat()
     evidence_record = {
@@ -42,7 +47,8 @@ def evidence_agent(state: Dict[str, Any]) -> Dict[str, Any]:
         "analysis_scope": {
             "total_detections": len(detections),
             "detections_kept": len(filtered)
-        }
+        },
+        "representative_samples": representative_samples,
     }
     
     # Generate audit trail text
@@ -70,6 +76,56 @@ def evidence_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     print(f"[Evidence Agent] ✅ Complete: Audit trail generated ({elapsed:.2f}s)")
     
     return {"meta": {**meta, "evidence": {"trail": trail, "record": evidence_record}}}
+
+
+def _confidence_sort_key(detection):
+    """Return confidence as a sortable float."""
+    try:
+        return float(detection.get("confidence"))
+    except (TypeError, ValueError):
+        return float("-inf")
+
+
+def _build_representative_samples(detections, limit=5):
+    """Return high-confidence samples with available evidence fields."""
+    evidence_fields = (
+        "sample_id",
+        "image_id",
+        "source",
+        "state",
+        "label",
+        "confidence",
+        "image_confidence",
+        "sensor_confidence",
+        "audio_confidence",
+        "text_confidence",
+        "sensor_type",
+        "text_caption",
+        "text_prompt",
+    )
+
+    ranked = sorted(
+        detections,
+        key=_confidence_sort_key,
+        reverse=True,
+    )
+
+    samples = []
+    for detection in ranked[:limit]:
+        sample = {
+            field: detection.get(field)
+            for field in evidence_fields
+            if detection.get(field) is not None
+        }
+
+        for text_field in ("text_caption", "text_prompt"):
+            value = sample.get(text_field)
+            if isinstance(value, str) and len(value) > 300:
+                sample[text_field] = value[:297] + "..."
+
+        samples.append(sample)
+
+    return samples
 
 
 def _generate_trail_with_llm(llm, prompt: str, record: Dict) -> str:

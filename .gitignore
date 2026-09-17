@@ -32,6 +32,8 @@ datasets/*/labels/
 datasets/*/sensor_data/
 datasets/solar_panel_defects/
 datasets/power_transmission_inspection/
+/datasets/manufacturing_maintenance/
+/datasets/water_treatment/
 
 # Temporary sequential image links (created during DLStreamer inference)
 .tmp_seq_images/
@@ -45,6 +47,8 @@ models/ov_models/**/*.mapping
 models/ov_models/**/*.yaml
 models/ov_models/llms/
 models/ov_models/oil_gas_pipeline
+models/ov_models/manufacturing_maintenance/
+/models/ov_models/water_treatment/
 
 
 data/
@@ -84,10 +88,7 @@ datasets/pipeline_defects_detection/005588_Deformation.jpg
 datasets/pipeline_defects_detection/video/
 
 # GSoC planning documents (local only)
-GSoC_Timeline.md
-task2.md
-task3a.md
-task3b.md
+gsoc_guide/
 
 # Benchmark scripts and related outputs
 benchmarks/

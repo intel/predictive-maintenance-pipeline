@@ -88,6 +88,15 @@ def _get_frame_detections(db_client, frame_id) -> List[Dict[str, Any]]:
     except Exception:
         pass
     try:
+        # Try sample_id (audio/text classification use case)
+        rows = db_client.execute_query(
+            "SELECT * FROM detections WHERE sample_id = ?", (int(frame_id),)
+        )
+        if rows:
+            return rows
+    except Exception:
+        pass
+    try:
         # Try source match (classification use case, string identifier)
         rows = db_client.execute_query(
             "SELECT * FROM detections WHERE source LIKE ?", (f"%{frame_id}%",)

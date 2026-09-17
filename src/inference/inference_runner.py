@@ -107,6 +107,10 @@ def run_inference(model_path, model_proc_path, images_dir, output_file,
         output_file=output_file,
         out_subdir=out_subdir,
     )
+    # Command-line/runtime device overrides the configured default.
+    handler_config["device"] = device
+    handler_config["inference"]["device"] = device
+    handler_config["num_images"] = num_images
 
     handler = dispatch(handler_config)
     handler.load(handler_config)

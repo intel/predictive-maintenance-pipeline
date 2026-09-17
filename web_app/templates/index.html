@@ -205,6 +205,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
           <option value="video" selected>Video</option>
           <option value="images">Images</option>
           <option value="sensor">Sensor</option>
+          <option value="multi">Multi-modal</option>
         </select>
       </div>
       <div>
@@ -385,7 +386,8 @@ function switchUseCase(){
 
 function toggleInputMode(){
   var mode=document.getElementById('inputMode').value;
-  document.getElementById('numImagesGroup').style.display=(mode==='images')?'':'none';
+  document.getElementById('numImagesGroup').style.display=
+    (mode==='images'||mode==='multi')?'':'none';
   document.getElementById('inferenceIntervalGroup').style.display=(mode==='video')?'':'none';
   document.getElementById('videoPathGroup').style.display=(mode==='video')?'':'none';
 }
@@ -592,6 +594,7 @@ function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function sqlTicketId(row){
   if(row.frame_id!==undefined && row.frame_id!==null) return row.frame_id;
   if(row.image_id!==undefined && row.image_id!==null) return row.image_id;
+  if(row.sample_id!==undefined && row.sample_id!==null) return row.sample_id;
   if(row.source!==undefined && row.source!==null) return row.source;
   return null;
 }

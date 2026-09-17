@@ -1,0 +1,14 @@
+{
+  "analysis": [
+    "Summarize the manufacturing maintenance classification results."
+  ],
+  "evidence": [
+    "Report the policy thresholds and filtering results."
+  ],
+  "sql": [
+    "How many alert_signal events were classified today?",
+    "Show impact_event classifications with confidence above 0.8.",
+    "Compare the counts of rotating_machinery and vehicle_engine classifications.",
+    "Show the caption for record ID 42."
+  ]
+}

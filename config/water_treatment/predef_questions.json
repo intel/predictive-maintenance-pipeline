@@ -1,0 +1,14 @@
+{
+  "analysis": [
+    "Summarize the water treatment irrigation classification results."
+  ],
+  "evidence": [
+    "Report the policy thresholds and filtering results."
+  ],
+  "sql": [
+    "How many records in Arizona have the label flood?",
+    "Show database records where the label is drip and confidence is above 0.8.",
+    "Using WHERE label IN ('sprinkler', 'flood', 'non_irrigated'), count database records grouped by label.",
+    "Show me the text prompt for patch #42."
+  ]
+}

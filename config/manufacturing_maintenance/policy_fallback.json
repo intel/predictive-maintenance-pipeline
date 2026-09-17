@@ -1,0 +1,10 @@
+{
+  "min_conf_global": 0.5,
+  "per_class_thresholds": {
+    "alert_signal": 0.5,
+    "ambient_normal": 0.5,
+    "impact_event": 0.5,
+    "rotating_machinery": 0.5,
+    "vehicle_engine": 0.5
+  }
+}

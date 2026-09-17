@@ -29,8 +29,8 @@ if __name__ == '__main__':
                         help='Path to input video file (overrides --images)')
     parser.add_argument('--output', default=None,
                         help='Output JSONL file (default: out/<use-case-id>/detections.jsonl)')
-    parser.add_argument('--device', default='GPU', choices=['CPU', 'GPU'],
-                        help='Inference device')
+    parser.add_argument('--device', default=None,
+                        help='OpenVINO inference device, e.g. CPU, GPU, or NPU')
     parser.add_argument('--conf-threshold', type=float, default=0.25,
                         help='Confidence threshold')
     parser.add_argument('--num-images', type=int, default=None,
@@ -171,6 +171,10 @@ if __name__ == '__main__':
     else:
         print(f"📌 Keeping existing outputs (clear_outputs: false)\n")
         Path(out_dir).mkdir(parents=True, exist_ok=True)
+
+    # Use the configured device unless explicitly overridden by --device.
+    if args.device is None:
+        args.device = config.get('inference', {}).get('device', 'GPU')
 
     run_inference(args.model, args.model_proc, args.images, args.output,
                   args.device, args.conf_threshold, args.num_images,

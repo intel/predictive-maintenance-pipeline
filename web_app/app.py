@@ -577,7 +577,8 @@ def ticket_create():
         sqlite_cfg = full_cfg.get('sqlite', {})
         schema = full_cfg.get('schema')
         include_image = bool(
-            inference_cfg.get('images_path')
+            inference_cfg.get('ticket_images')
+            or inference_cfg.get('images_path')
             or inference_cfg.get('video_path')
         )
         db_path = sqlite_cfg.get('db_path', 'out/sql_data/detections.db')

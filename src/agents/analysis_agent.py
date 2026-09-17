@@ -98,13 +98,19 @@ def _generate_stats(detections, policy=None):
         "labels_found": list(label_counts.keys()),
         "counts_per_label": dict(label_counts),
         "confidence_stats": label_confidences,
+        "fused_confidence_distribution": _numeric_stats(
+            [d.get("confidence") for d in detections]
+        ),
         "regression_statistics": (
             _generate_regression_stats(detections, policy)
             if policy.get("policy_type") == "regression"
             else {}
         ),
         # Image-vs-sensor distribution, modality dominance, and anomaly counts.
-        "sensor_statistics": _generate_sensor_stats(detections, policy)
+        "sensor_statistics": _generate_sensor_stats(detections, policy),
+        "modality_confidence_statistics": (
+            _generate_modality_confidence_stats(detections)
+        ),
     }
 
 
@@ -131,6 +137,61 @@ def _numeric_stats(values):
         "min": round(min(nums), 3),
         "max": round(max(nums), 3)
     }
+
+def _generate_modality_confidence_stats(detections):
+    """Generate statistics for available modality confidence fields."""
+    confidence_fields = (
+        "image_confidence",
+        "sensor_confidence",
+        "audio_confidence",
+        "text_confidence",
+    )
+
+    distributions = {}
+    for field in confidence_fields:
+        values = [
+            det.get(field)
+            for det in detections
+            if _safe_float(det.get(field)) is not None
+        ]
+        if values:
+            distributions[field] = _numeric_stats(values)
+
+    audio_dominant = 0
+    text_dominant = 0
+    ties = 0
+    confidence_gaps = []
+
+    for det in detections:
+        audio_conf = _safe_float(det.get("audio_confidence"))
+        text_conf = _safe_float(det.get("text_confidence"))
+
+        if audio_conf is None or text_conf is None:
+            continue
+
+        confidence_gaps.append(abs(audio_conf - text_conf))
+
+        if audio_conf > text_conf:
+            audio_dominant += 1
+        elif text_conf > audio_conf:
+            text_dominant += 1
+        else:
+            ties += 1
+
+    result = {
+        "distributions": distributions,
+    }
+
+    if confidence_gaps:
+        result["audio_text_comparison"] = {
+            "paired_count": len(confidence_gaps),
+            "audio_dominant": audio_dominant,
+            "text_dominant": text_dominant,
+            "ties": ties,
+            "absolute_confidence_gap": _numeric_stats(confidence_gaps),
+        }
+
+    return result
 
 
 def _parse_sensor_raw(raw_value):

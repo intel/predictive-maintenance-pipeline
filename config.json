@@ -1,5 +1,5 @@
 {
-  "default-use-case": "power_transmission_inspection",
+  "default-use-case": "water_treatment",
   "use-cases": [
     {
       "id": "pipeline_defects_detection",
@@ -20,6 +20,14 @@
     {
       "id": "power_transmission_inspection",
       "display_text": "Power Transmission Inspection"
+    },
+    {
+      "id": "manufacturing_maintenance",
+      "display_text": "Manufacturing Maintenance"
+    },
+    {
+      "id": "water_treatment",
+      "display_text": "Water Treatment"
     }
   ]
 }

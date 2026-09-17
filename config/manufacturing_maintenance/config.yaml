@@ -1,0 +1,138 @@
+display_text: "Manufacturing Maintenance"
+modality: multi  # 'image', 'sensor', or 'multi'
+
+nc: 5
+names:
+  0: alert_signal
+  1: ambient_normal
+  2: impact_event
+  3: rotating_machinery
+  4: vehicle_engine
+
+inference:
+  handler: openvino_audio_text_classify
+  task: classify  # 'detect' or 'classify'
+  device: GPU
+  input_mode: multi
+
+  audio_model_path: models/ov_models/manufacturing_maintenance/audio.xml
+  text_model_path: models/ov_models/manufacturing_maintenance/text.xml
+
+  manifest_path: datasets/manufacturing_maintenance/manifest_balanced.csv
+  audio_dir: datasets/manufacturing_maintenance/audio
+  source_column: file_name
+  caption_column: caption
+
+  sample_rate: 16000
+  clip_seconds: 10
+  n_mfcc: 13
+
+  training_manifest_path: models/ov_models/manufacturing_maintenance/manifest.csv
+  audio_features_path: models/ov_models/manufacturing_maintenance/audio_features.npy
+  labels_path: models/ov_models/manufacturing_maintenance/labels.npy
+  classes_path: models/ov_models/manufacturing_maintenance/classes.json
+
+  fusion_weights:
+    audio: 0.5
+    text: 0.5
+
+  raw_waveform_max_points: 1000
+
+sqlite:
+  db_path: out/manufacturing_maintenance/sql_data/detections.db
+  clear_on_run: true
+  clear_outputs: true
+
+agents:
+  active: [policy, analysis, evidence]
+  confidence_threshold: 0.5
+  report_top_n: 5
+  execution_mode: sequential
+  shared_device: GPU
+
+  policy:
+    llm_mode: model
+    model_id: models/ov_models/llms/Phi-4-mini-instruct-int4gq
+    device: GPU
+
+  analysis:
+    llm_mode: model
+    model_id: models/ov_models/llms/Phi-4-mini-instruct-int4gq
+    device: GPU
+
+  evidence:
+    llm_mode: model
+    model_id: models/ov_models/llms/Phi-4-mini-instruct-int4gq
+    device: GPU
+
+glue:
+  mode: model
+  model_id: models/ov_models/llms/Phi-4-mini-instruct-int4gq
+  device: GPU
+  max_steps: 4
+  verbose: true
+  enable_cache: false
+  suppress_thinking: true
+
+sql:
+  model_id: models/ov_models/llms/sqlcoder-7b-2-int4cw
+  device: GPU
+  use_case: manufacturing_maintenance
+
+schema:
+  table_name: detections
+  columns:
+    - name: id
+      type: INTEGER PRIMARY KEY AUTOINCREMENT
+      required: false
+    - name: sample_id
+      type: INTEGER
+      required: false
+    - name: source
+      type: TEXT
+      required: true
+    - name: label
+      type: TEXT
+      required: true
+    - name: confidence
+      type: REAL
+      required: true
+    - name: audio_confidence
+      type: REAL
+      required: false
+    - name: text_confidence
+      type: REAL
+      required: false
+    - name: sensor_type
+      type: TEXT
+      required: true
+    - name: sensor_raw_json
+      type: TEXT
+      required: false
+    - name: sensor_features_json
+      type: TEXT
+      required: true
+    - name: text_caption
+      type: TEXT
+      required: true
+    - name: created_at
+      type: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      required: false
+  indexes:
+    - label
+    - confidence
+    - source
+    - sensor_type
+
+# Mapping from Task G classification results to SQLite columns.
+detection_mapping:
+  sample_id: sample_id
+  source: source
+  label: label
+  confidence: confidence
+  audio_confidence: audio_confidence
+  text_confidence: text_confidence
+  sensor_type: sensor_type
+  sensor_raw_json: sensor_raw_json
+  sensor_features_json: sensor_features_json
+  text_caption: text_caption
