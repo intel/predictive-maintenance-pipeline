@@ -6,6 +6,7 @@ evidence trail context, and embedded frame images.
 """
 
 import base64
+import html as html_lib
 import os
 import re
 from datetime import datetime, timezone
@@ -14,6 +15,27 @@ from typing import Dict, Any, List, Optional
 
 # Allowlist pattern: stem must start with alphanumeric and contain only safe chars
 _SAFE_STEM_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_\-]*$')
+
+# '/' is allowed because some manifests use relative keys as sample sources
+_FRAME_ID_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._/\-]{0,127}$')
+
+
+def validate_frame_id(frame_id):
+    """Return frame_id unchanged if it is a non-negative int or an allowlisted
+    identifier string; otherwise raise ValueError."""
+    if isinstance(frame_id, bool):
+        raise ValueError("Invalid frame_id")
+    if isinstance(frame_id, int):
+        if frame_id < 0:
+            raise ValueError("Invalid frame_id")
+        return frame_id
+    if isinstance(frame_id, str) and _FRAME_ID_RE.fullmatch(frame_id):
+        return frame_id
+    raise ValueError("Invalid frame_id")
+
+
+def _esc(value) -> str:
+    return html_lib.escape(str(value), quote=True)
 
 
 def _safe_filename_stem(value: str) -> str:
@@ -127,24 +149,25 @@ def generate_ticket_html(
         for det in detections:
             det_rows += f"""
         <tr>
-            <td>{det.get('label', 'N/A')}</td>
+            <td>{_esc(det.get('label', 'N/A'))}</td>
             <td>{det.get('confidence', 0):.3f}</td>
-            <td>({det.get('x', 0)}, {det.get('y', 0)})</td>
-            <td>{det.get('width', 0)} × {det.get('height', 0)}</td>
+            <td>({_esc(det.get('x', 0))}, {_esc(det.get('y', 0))})</td>
+            <td>{_esc(det.get('width', 0))} × {_esc(det.get('height', 0))}</td>
         </tr>"""
     else:
         table_header = "<tr><th>Source</th><th>Label</th><th>Confidence</th></tr>"
         for det in detections:
             det_rows += f"""
         <tr>
-            <td>{det.get('source', 'N/A')}</td>
-            <td>{det.get('label', 'N/A')}</td>
+            <td>{_esc(det.get('source', 'N/A'))}</td>
+            <td>{_esc(det.get('label', 'N/A'))}</td>
             <td>{det.get('confidence', 0):.3f}</td>
         </tr>"""
 
     n_cols = 4 if is_detection else 3
-    ticket_title = f"Frame {frame_id}" if is_detection else str(frame_id)
-    safe_id = str(frame_id).replace('.', '_').replace('/', '_') if not isinstance(frame_id, int) else f"F{frame_id:06d}"
+    ticket_title = _esc(f"Frame {frame_id}" if is_detection else str(frame_id))
+    safe_id = _esc(str(frame_id).replace('.', '_').replace('/', '_') if not isinstance(frame_id, int) else f"F{frame_id:06d}")
+    image_path_html = _esc(image_path)
 
     # Image tag (embedded base64 or path reference)
     image_section = ""
@@ -159,24 +182,20 @@ def generate_ticket_html(
         else:
             img_tag = (
                 f'<p style="color:#f44">'
-                f'Image not found: {image_path}</p>'
+                f'Image not found: {image_path_html}</p>'
             )
 
         image_section = f"""
   <div class="section">
     <h2>📸 Image</h2>
     <div class="img-container">{img_tag}</div>
-    <div class="path-info">Image path: {image_path}</div>
+    <div class="path-info">Image path: {image_path_html}</div>
   </div>
 """
 
 
     # Escape evidence trail for HTML
-    evidence_html = (
-        evidence_trail.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    evidence_html = html_lib.escape(evidence_trail, quote=False)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -249,6 +268,8 @@ def create_ticket(
     Returns:
         Dict with 'ok', 'path', and 'message' keys
     """
+    frame_id = validate_frame_id(frame_id)
+
     # Get all detections for this frame
     detections = _get_frame_detections(db_client, frame_id)
 
@@ -315,7 +336,9 @@ def create_ticket(
     # Write ticket to disk
     tickets_dir = out_dir / "tickets"
     tickets_dir.mkdir(parents=True, exist_ok=True)
-    safe_name = str(frame_id).replace('/', '_').replace('\\', '_').replace('.', '_')
+    safe_name = _safe_filename_stem(
+        str(frame_id).replace('/', '_').replace('\\', '_').replace('.', '_')
+    )
     ticket_file = tickets_dir / f"ticket_{safe_name}.html"
     ticket_file.write_text(html, encoding="utf-8")
 

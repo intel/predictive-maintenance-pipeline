@@ -564,9 +564,15 @@ def serve_video(filename):
 def ticket_create():
     """Create a ticket for a specific frame/image."""
     data = request.get_json(force=True)
-    frame_id = data.get("frame_id")
+    frame_id = data.get("frame_id") if isinstance(data, dict) else None
     if frame_id is None:
         return jsonify({"ok": False, "error": "Missing frame_id"}), 400
+
+    from src.agents.ticketing_agent import validate_frame_id
+    try:
+        frame_id = validate_frame_id(frame_id)
+    except ValueError:
+        return jsonify({"ok": False, "error": "Invalid frame_id"}), 400
 
     try:
         from src.agents.ticketing_agent import create_ticket
@@ -633,7 +639,25 @@ def serve_ticket(filename):
     """Serve a ticket HTML file."""
     from flask import send_from_directory
     tickets_dir = _get_out_dir() / "tickets"
-    return send_from_directory(str(tickets_dir), filename)
+    response = send_from_directory(str(tickets_dir), filename)
+    # Tickets are static documents; block scripts even if markup slips through.
+    response.headers["Content-Security-Policy"] = (
+        "sandbox; default-src 'none'; img-src data:; "
+        "style-src 'unsafe-inline'; frame-ancestors 'self'"
+    )
+    return response
+
+
+@app.after_request
+def _set_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    # script-src is omitted because index.html still relies on inline scripts/handlers.
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "object-src 'none'; base-uri 'self'; form-action 'self'; "
+        "connect-src 'self'; frame-ancestors 'self'",
+    )
+    return response
 
 
 # ---------------------------------------------------------------------------
