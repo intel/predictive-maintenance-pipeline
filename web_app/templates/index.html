@@ -563,9 +563,9 @@ function sendChat(){
         refs.forEach(ref=>{
           html+='<div class="frame-card">';
           if(ref.filename){
-            html+='<img src="/viz/'+ref.filename+'" alt="'+ref.label+'" title="'+ref.label+'" onclick="document.getElementById(\'lightboxImg\').src=this.src;document.getElementById(\'lightbox\').classList.add(\'show\')">';
+            html+='<img src="/viz/'+escAttr(encodeURIComponent(String(ref.filename)))+'" alt="'+escAttr(String(ref.label))+'" title="'+escAttr(String(ref.label))+'" onclick="document.getElementById(\'lightboxImg\').src=this.src;document.getElementById(\'lightbox\').classList.add(\'show\')">';
           }
-          html+='<button class="ticket-btn" onclick="raiseTicket(\''+ref.id+'\',this)">🎫 Ticket '+ref.label+'</button>';
+          html+='<button class="ticket-btn" data-ticket-id="'+escAttr(String(ref.id))+'">🎫 Ticket '+escHtml(ref.label)+'</button>';
           html+='</div>';
         });
         html+='</div>';
@@ -589,7 +589,7 @@ function addMsgHtml(role,html){
   const div=document.createElement('div');div.className='msg '+role;
   div.innerHTML=html;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
-function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
 function sqlTicketId(row){
   if(row.frame_id!==undefined && row.frame_id!==null) return row.frame_id;
@@ -628,7 +628,7 @@ function renderSqlRows(rows){
 }
 
 function escAttr(s){
-  return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 function stripGeneratedSql(answer){
   const text=answer||'';
@@ -723,20 +723,29 @@ function refreshTicketList(){
       list.innerHTML='';empty.style.display='';return;
     }
     empty.style.display='none';
-    list.innerHTML=d.tickets.map(t=>`
-      <div class="ticket-card">
-        <div class="tc-title">🎫 Sample ${escHtml(String(t.sample_id))}</div>
-        <div class="tc-meta">${t.filename} · ${t.size_kb} KB</div>
-        <a href="javascript:void(0)" onclick="viewTicket('${t.filename}')">Open Ticket ↗</a>
-      </div>
-    `).join('');
+    list.replaceChildren(...d.tickets.map(t=>{
+      const card=document.createElement('div');
+      card.className='ticket-card';
+      const title=document.createElement('div');
+      title.className='tc-title';
+      title.textContent='🎫 Sample '+String(t.sample_id);
+      const meta=document.createElement('div');
+      meta.className='tc-meta';
+      meta.textContent=t.filename+' · '+t.size_kb+' KB';
+      const link=document.createElement('a');
+      link.href='#';
+      link.textContent='Open Ticket ↗';
+      link.addEventListener('click',e=>{e.preventDefault();viewTicket(t.filename)});
+      card.append(title,meta,link);
+      return card;
+    }));
   }).catch(()=>{list.innerHTML='<div style="color:var(--warn)">Failed to load tickets.</div>'});
 }
 
 function viewTicket(filename){
   document.getElementById('ticketViewer').style.display='';
   document.getElementById('ticketViewerTitle').textContent=filename;
-  document.getElementById('ticketFrame').src='/ticket/'+filename;
+  document.getElementById('ticketFrame').src='/ticket/'+encodeURIComponent(filename);
 }
 function closeTicketViewer(){
   document.getElementById('ticketViewer').style.display='none';

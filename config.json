@@ -1,5 +1,5 @@
 {
-  "default-use-case": "water_treatment",
+  "default-use-case": "pipeline_defects_detection",
   "use-cases": [
     {
       "id": "pipeline_defects_detection",
