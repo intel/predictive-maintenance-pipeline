@@ -113,6 +113,21 @@ pace/
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
 - [SQLite Documentation](https://www.sqlite.org/docs.html)
 
+### Datasets
+
+- **Pipeline Defect Dataset** (`pipeline_defects_detection`) by Mir Md Musleh Uddin Shaeek, available on [Kaggle](https://www.kaggle.com/datasets/simplexitypipeline/pipeline-defect-dataset) (DOI: [10.34740/KAGGLE/DS/5294466](https://doi.org/10.34740/KAGGLE/DS/5294466)), licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+```bibtex
+@misc{mir_md_musleh_uddin_shaeek_2024,
+  title={Pipeline Defect Dataset},
+  url={https://www.kaggle.com/ds/5294466},
+  DOI={10.34740/KAGGLE/DS/5294466},
+  publisher={Kaggle},
+  author={Mir Md Musleh Uddin Shaeek},
+  year={2024}
+}
+```
+
 ---
 
 ---
